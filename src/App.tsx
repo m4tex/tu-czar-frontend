@@ -1,56 +1,56 @@
-import {type ChangeEvent, useMemo, useState} from "react"
+import { useCallback, useState, useEffect } from "react"
 import './App.css'
+
+import { getConnection, InitDB } from "@/duckdb.ts";
 
 import {Header} from "@/components/Header.tsx"
 import {FilterPanel} from "@/components/FilterPanel.tsx"
 import {TradeupList} from "@/components/TradeupList.tsx"
 
-function App() {
-    const [data, setData] = useState<TradeupEntry[]>([])
+function GetTradeupIdentifier(tradeup: Tradeup) {
+    let id = tradeup.skin1.name
 
+    if (tradeup.skin2 && tradeup.skin1.name !== tradeup.skin2.name)
+        id += ' x ' + tradeup.skin2.name
+
+    return id
+}
+
+function App() {
     // Filters
     const [sortIncreasingly, setSortIncreasingly] = useState<boolean>(true)
     const [weaponNameFilter, setWeaponNameFilter] = useState<string>("")
-    const [filter, setFilter] = useState<string | null>(null);
+    const [filter, setFilter] = useState<string | null>(null)
+    const [profitableOnly, setProfitableOnly] = useState<boolean>(true)
 
-    const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
+    useEffect(() => {
+        (async () => {
+            const conn = await getConnection()
+            await InitDB(conn);
+            const res = await conn.query(`SELECT COUNT(*) AS count FROM tradeups.contracts`)
+            console.log(res.get(0)!.count)
+        })()
+    }, []);
 
-        const text = await file.text()
-        const json = JSON.parse(text)
-
-        setData(json)
-        console.log(json)
-    }
-
-    const selectFilterValue = (entry: TradeupEntry) => {
-        const stats = entry[0]
-
+    const selectFilterValue = useCallback((tradeup: Tradeup) => {
         if (filter === 'profit_percentage')
-            return stats.profitFactor
+            return tradeup.profitFactor
 
         return 0
-    }
-
-    const filteredData = useMemo<TradeupEntry[]>(() => {
-        const name = weaponNameFilter.toLowerCase()
-        return data.filter(entry => entry[1].skin1.name.toLowerCase().includes(name) ||
-            entry[1].skin2 && entry[1].skin2.name.toLowerCase().includes(name)).toSorted(
-                (a, b) => sortIncreasingly ?
-                    selectFilterValue(a) - selectFilterValue(b) :
-                    selectFilterValue(b) - selectFilterValue(a)
-        )
-    }, [selectFilterValue, data, sortIncreasingly, weaponNameFilter])
+    }, [filter])
 
     return (
-    <>
-        <Header onFileChange={handleFile} />
-        <FilterPanel weaponNameFilter={weaponNameFilter} setWeaponNameFilter={setWeaponNameFilter}
-            sortIncreasingly={sortIncreasingly} setSortIncreasingly={setSortIncreasingly}
-               filter={filter} setFilter={setFilter} />
-        <TradeupList tradeups={filteredData} />
-    </>
+        <>
+            <div className='flex flex-col gap-4'>
+                <Header />
+                <FilterPanel weaponNameFilter={weaponNameFilter} setWeaponNameFilter={setWeaponNameFilter}
+                             sortIncreasingly={sortIncreasingly} setSortIncreasingly={setSortIncreasingly}
+                             filter={filter} setFilter={setFilter} profitableOnly={profitableOnly}
+                             setProfitableOnly={setProfitableOnly} />
+                <TradeupList tradeupData={{}} />
+            </div>
+            <p className='sticky bottom-0 p-3 pt-8 bg-linear-0 from-background to-transparent'>Made by m4tex</p>
+        </>
     )
 }
 

@@ -1,5 +1,5 @@
-interface TradeupStats {
-    profitFactor: number
+interface Dictionary<T> {
+    [key: string]: T;
 }
 
 interface Skin {
@@ -13,7 +13,9 @@ interface Skin {
     prices_st: number[5]
 }
 
-interface TradeupConfig {
+interface Tradeup {
+    profitFactor: numer
+
     skin1: Skin
     skin2?: Skin
     skin1slots: number
@@ -22,4 +24,4 @@ interface TradeupConfig {
     skin2minAvg?: number
 }
 
-type TradeupEntry = [TradeupStats, TradeupConfig]
+type TradeupData = Dictionary<Tradeup[]>

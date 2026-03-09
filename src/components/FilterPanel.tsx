@@ -4,7 +4,10 @@ import {Select, SelectItem, SelectPopup, SelectTrigger, SelectValue} from "@/com
 import {Button} from "@/components/ui/button.tsx";
 import {ArrowDownIcon, ArrowUpIcon, RotateCcwIcon} from "lucide-react";
 import {Tooltip, TooltipPopup, TooltipTrigger} from "@/components/ui/tooltip.tsx";
-import {JSX} from "react";
+import {type JSX} from "react";
+import {Checkbox} from "@/components/ui/checkbox.tsx";
+import {Label} from "@/components/ui/label.tsx";
+import {Separator} from "@/components/ui/separator.tsx";
 
 const dataFilters = [
     { label: "Sort by", value: null },
@@ -21,19 +24,25 @@ interface Props {
     setSortIncreasingly: (value: boolean) => void
     filter: string | null
     setFilter: (value: string | null) => void
+    profitableOnly: boolean
+    setProfitableOnly: (value: boolean) => void
 }
 
 export function FilterPanel(props: Props): JSX.Element {
     const refreshFilters = () => {
-        console.log('refresh filters')
+        props.setWeaponNameFilter("");
+        props.setFilter(null);
+        props.setSortIncreasingly(true);
+        props.setProfitableOnly(true);
     }
 
     return (
-        <Card className="mb-5">
+        <Card>
             <CardPanel className="p-3 flex gap-3 justify-between">
                 <div className="flex gap-3">
                     <Input size="lg" aria-label="Filter skin name" placeholder="Filter skin name" type="text" value={props.weaponNameFilter}
                            onChange={(value) => props.setWeaponNameFilter(value.target.value)} />
+                    <Separator orientation='vertical' />
                     <Select aria-label="Sort by" items={dataFilters}
                             onValueChange={value => props.setFilter(value) } value={props.filter}>
                         <SelectTrigger className="w-5" size="lg">
@@ -56,6 +65,11 @@ export function FilterPanel(props: Props): JSX.Element {
                                 <ArrowDownIcon />
                         }
                     </Button>
+                    <Separator orientation='vertical' />
+                    <Label className='whitespace-nowrap'>
+                        <Checkbox checked={props.profitableOnly} onCheckedChange={(value) => props.setProfitableOnly(value)} />
+                        Profitable only
+                    </Label>
                 </div>
                 <Tooltip>
                     <TooltipTrigger render={<Button size="icon-lg" variant="outline" onClick={refreshFilters} />}>
