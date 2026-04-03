@@ -36,11 +36,13 @@ export function FilterPanel(props: Props): JSX.Element {
         props.setProfitableOnly(true);
     }
 
+    function onWeaponNameFilterChanged()
+
     return (
         <Card>
             <CardPanel className="p-3 flex gap-3 justify-between">
                 <div className="flex gap-3">
-                    <Input size="lg" aria-label="Filter skin name" placeholder="Filter skin name" type="text" value={props.weaponNameFilter}
+                    <Input size="lg" aria-label="Filter skin name" placeholder="Filter skin name" type="text" onValueChange={} value={props.weaponNameFilter}
                            onChange={(value) => props.setWeaponNameFilter(value.target.value)} />
                     <Separator orientation='vertical' />
                     <Select aria-label="Sort by" items={dataFilters}

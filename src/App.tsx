@@ -1,11 +1,10 @@
-import { useCallback, useState, useEffect } from "react"
+import {useCallback, useEffect, useState} from "react"
 import './App.css'
 
-import { getConnection, InitDB } from "@/duckdb.ts";
-
-import {Header} from "@/components/Header.tsx"
-import {FilterPanel} from "@/components/FilterPanel.tsx"
-import {TradeupList} from "@/components/TradeupList.tsx"
+import { Header } from "@/components/Header.tsx"
+import { FilterPanel } from "@/components/FilterPanel.tsx"
+import { TradeupList } from "@/components/TradeupList.tsx"
+import { useQuery, getConnection } from "@/duckdb.ts";
 
 function GetTradeupIdentifier(tradeup: Tradeup) {
     let id = tradeup.skin1.name
@@ -16,21 +15,37 @@ function GetTradeupIdentifier(tradeup: Tradeup) {
     return id
 }
 
+/** TODO
+ * Add filters - tolerance to closeness to float cap and tolerance to closeness to wear threshold
+ * Blacklist for problematic skins
+ * A budget filter, with a slider for certainty
+ */
+
+const tradeupsPerPage = 50
+
 function App() {
+    const [page, setPage] = useState(0)
+
+    const [tradeupIDs, tradeupIDsLoading] = useQuery(`SELECT * FROM catalog LIMIT ${tradeupsPerPage} OFFSET ${page*tradeupsPerPage}`)
+
+    // useMemo for organized data
+
     // Filters
-    const [sortIncreasingly, setSortIncreasingly] = useState<boolean>(true)
+    const [sortDecreasingly, setSortDecreasingly] = useState<boolean>(true)
     const [weaponNameFilter, setWeaponNameFilter] = useState<string>("")
     const [filter, setFilter] = useState<string | null>(null)
     const [profitableOnly, setProfitableOnly] = useState<boolean>(true)
 
     useEffect(() => {
         (async () => {
-            const conn = await getConnection()
-            await InitDB(conn);
-            const res = await conn.query(`SELECT COUNT(*) AS count FROM tradeups.contracts`)
-            console.log(res.get(0)!.count)
+            const con = await getConnection()
+            const sortOrder = sortDecreasingly ? 'DESC' : 'ASC'
+
+            await con.query(`INSERT INTO catalog SELECT id FROM tradeups.contracts QUALIFY ROW_NUMBER() OVER (PARTITION BY skin1,skin2 ORDER BY profit DESC NULLS LAST) = 1 ORDER BY profit ${sortOrder} NULLS LAST`)
         })()
-    }, []);
+    }, [sortDecreasingly, weaponNameFilter, filter, profitableOnly])
+
+    const [tradeupData, setTradeupData] = useState<unknown | null>(null)
 
     const selectFilterValue = useCallback((tradeup: Tradeup) => {
         if (filter === 'profit_percentage')
@@ -44,7 +59,7 @@ function App() {
             <div className='flex flex-col gap-4'>
                 <Header />
                 <FilterPanel weaponNameFilter={weaponNameFilter} setWeaponNameFilter={setWeaponNameFilter}
-                             sortIncreasingly={sortIncreasingly} setSortIncreasingly={setSortIncreasingly}
+                             sortIncreasingly={sortDecreasingly} setSortIncreasingly={setSortDecreasingly}
                              filter={filter} setFilter={setFilter} profitableOnly={profitableOnly}
                              setProfitableOnly={setProfitableOnly} />
                 <TradeupList tradeupData={{}} />
