@@ -1,7 +1,3 @@
-interface Dictionary<T> {
-    [key: string]: T;
-}
-
 interface Skin {
     name: string
     rarity: number
@@ -14,14 +10,15 @@ interface Skin {
 }
 
 interface Tradeup {
-    profitFactor: numer
+    id: number
+    profit: number
 
-    skin1: Skin
-    skin2?: Skin
-    skin1slots: number
-    skin2slots?: number
+    skin1: string
+    skin2?: string
+    skin1count: number
+    skin2count?: number
     skin1minAvg: number
     skin2minAvg?: number
+    skin1maxAvg: number
+    skin2maxAvg?: number
 }
-
-type TradeupData = Dictionary<Tradeup[]>
