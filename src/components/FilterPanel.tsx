@@ -43,7 +43,8 @@ export function FilterPanel(props: Props): JSX.Element {
         props.setProfitableOnly(true)
     }
 
-    function onWeaponNameFilterChanged(value: string, _) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function onWeaponNameFilterChanged(value: string, _: any) {
         if (weaponNameDebounceTimer)
             clearTimeout(weaponNameDebounceTimer)
 
@@ -59,10 +60,11 @@ export function FilterPanel(props: Props): JSX.Element {
         <Card>
             <CardPanel className="p-3 flex gap-3 justify-between">
                 <div className="flex gap-3">
-                    <Input size="lg" aria-label="Filter skin name" placeholder="Filter skin name" type="text" onValueChange={onWeaponNameFilterChanged} ref={weaponNameFilterRef} />
+                    <Input size="lg" aria-label="Filter skin name" className='bg-background' autoComplete='off'
+                           placeholder="Filter skin name" type="text" onValueChange={onWeaponNameFilterChanged} ref={weaponNameFilterRef} />
                     <Separator orientation='vertical' />
                     <Select aria-label="Sort by" items={dataFilters} disabled={true}
-                            onValueChange={value => props.setFilter(value) } value={props.filter}>
+                            onValueChange={value => props.setFilter(value!)} value={props.filter}>
                         <SelectTrigger className="w-5" size="lg">
                             <SelectValue />
                         </SelectTrigger>

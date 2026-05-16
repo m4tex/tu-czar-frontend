@@ -7,18 +7,21 @@ import { TradeupList } from "@/components/TradeupList.tsx"
 
 import { useAsyncEffectChain } from "../Utils.ts";
 import {useDuckDb} from "@/DuckDBHooks.ts";
+import {Pagination} from "@/components/Pagination.tsx";
 
 /** TODO
  * Add filters - tolerance to closeness to float cap and tolerance to closeness to wear threshold
  * Blacklist for problematic skins
  * A budget filter, with a slider for certainty
  * Simulation graph
+ * Handle interrupts on async chain
  */
 
 const tradeupsPerPage = 50
 
 function App() {
-    const [page, setPage] = useState(0)
+    const [page, setPage] = useState(1)
+    const [pageCount, setPageCount] = useState(0)
 
     // useMemo for organized data
 
@@ -65,9 +68,15 @@ function App() {
                 async () => { // Finally sort order before displaying
                     if (!ready || !conn) return
 
+                    // Get page count
+                    const countTable = await conn.query(`SELECT COUNT(*) as count FROM filteredCatalog`)
+                    const filteredCount = countTable.get(0)!.count
+
+                    setPageCount(Math.ceil(Number(filteredCount)/tradeupsPerPage))
+
                     const tradeups = await conn.query(`
                         SELECT * FROM filteredCatalog ORDER BY profit ${sortOrder} NULLS LAST 
-                            LIMIT ${tradeupsPerPage} OFFSET ${page*tradeupsPerPage}
+                            LIMIT ${tradeupsPerPage} OFFSET ${(page-1)*tradeupsPerPage}
                     `)
 
                     setTradeupData(tradeups.toArray().map(row => row.toJSON()))
@@ -91,8 +100,9 @@ function App() {
                              filter={filter} setFilter={setFilter} profitableOnly={profitableOnly}
                              setProfitableOnly={setProfitableOnly} />
                 <TradeupList tradeupData={tradeupData} />
+                <Pagination page={page} setPage={setPage} pageCount={pageCount} />
             </div>
-            <p className='sticky bottom-0 p-3 pt-8 bg-linear-0 from-background to-transparent'>Made by m4tex</p>
+            <p className='sticky bottom-0 p-3 pt-4 bg-linear-0 from-background to-transparent'>Made by m4tex</p>
         </>
     )
 }
