@@ -3,13 +3,13 @@ import {AsyncDuckDBConnection} from "@duckdb/duckdb-wasm";
 
 interface DbContext {
     conn: AsyncDuckDBConnection | null;
-    ready: boolean
+    ready: boolean;
 }
 
 export const DuckDbContext = createContext<DbContext>({
     conn: null,
     ready: false,
-})
+});
 
 export function useDuckDb() {
     return useContext(DuckDbContext);
@@ -22,7 +22,7 @@ interface QueryState {
 }
 
 export function useQuery(sql: string) {
-    const { conn, ready } = useContext(DuckDbContext);
+    const {conn, ready} = useContext(DuckDbContext);
     const [state, setState] = useState<QueryState>({
         data: null,
         error: null,

@@ -1,23 +1,24 @@
-import {Card, CardPanel} from "@/components/ui/card.tsx"
+import {Card, CardPanel} from "@/components/ui/card.tsx";
 import {
     Pagination as COSSPagination,
     PaginationContent, PaginationEllipsis,
     PaginationItem, PaginationLink, PaginationNext,
     PaginationPrevious
-} from "@/components/ui/pagination.tsx"
+} from "@/components/ui/pagination.tsx";
 import {type Dispatch, type SetStateAction} from "react";
 import {clsx} from "clsx";
 
 interface Props {
-    page: number
-    setPage: Dispatch<SetStateAction<number>>
-    pageCount: number
+    page: number;
+    setPage: Dispatch<SetStateAction<number>>;
+    pageCount: number;
 }
 
 export function Pagination(props: Props) {
     return (
-        <Card className='sticky bottom-12 w-fit left-1/2 transform -translate-x-1/2 shadow-[0px_0px_25px_rgba(0,0,0,0.5)]'>
-            <CardPanel className='p-1'>
+        <Card
+            className="sticky bottom-12 w-fit left-1/2 transform -translate-x-1/2 shadow-[0px_0px_25px_rgba(0,0,0,0.5)]">
+            <CardPanel className="p-1">
                 <COSSPagination>
                     <PaginationContent>
                         <PaginationItem>
@@ -26,7 +27,7 @@ export function Pagination(props: Props) {
                                                     () => props.setPage(currentPage => currentPage - 1)
                                                 }
                                                 className={clsx(props.page === 1 &&
-                                                    'pointer-events-none cursor-default text-muted')} />
+                                                    'pointer-events-none cursor-default text-muted')}/>
                         </PaginationItem>
 
                         { // Show first page behind ellipsis if we are on page 3 or beyond
@@ -37,7 +38,7 @@ export function Pagination(props: Props) {
                                     </PaginationLink>
                                 </PaginationItem>
                                 <PaginationItem>
-                                    <PaginationEllipsis />
+                                    <PaginationEllipsis/>
                                 </PaginationItem>
                             </>
                         }
@@ -45,8 +46,8 @@ export function Pagination(props: Props) {
                         { // On the last page show an additional button backwards
                             props.page === props.pageCount && props.pageCount > 3 &&
                             <PaginationItem>
-                                <PaginationLink href="#" onClick={() => props.setPage(props.page-2)}>
-                                    {props.page-2}
+                                <PaginationLink href="#" onClick={() => props.setPage(props.page - 2)}>
+                                    {props.page - 2}
                                 </PaginationLink>
                             </PaginationItem>
                         }
@@ -54,8 +55,8 @@ export function Pagination(props: Props) {
                         {
                             props.page > 1 &&
                             <PaginationItem>
-                                <PaginationLink href="#" onClick={() => props.setPage(props.page-1)}>
-                                    {props.page-1}
+                                <PaginationLink href="#" onClick={() => props.setPage(props.page - 1)}>
+                                    {props.page - 1}
                                 </PaginationLink>
                             </PaginationItem>
                         }
@@ -68,27 +69,27 @@ export function Pagination(props: Props) {
 
                         {
                             props.page < props.pageCount &&
-                                <PaginationItem>
-                                    <PaginationLink href="#" onClick={() => props.setPage(props.page+1)}>
-                                        {props.page+1}
-                                    </PaginationLink>
-                                </PaginationItem>
+                            <PaginationItem>
+                                <PaginationLink href="#" onClick={() => props.setPage(props.page + 1)}>
+                                    {props.page + 1}
+                                </PaginationLink>
+                            </PaginationItem>
                         }
 
                         { // On the first page show one more button forward
                             props.page === 1 && props.pageCount >= 3 &&
-                                <PaginationItem>
-                                    <PaginationLink href="#" onClick={() => props.setPage(props.page+2)}>
-                                        {props.page+2}
-                                    </PaginationLink>
-                                </PaginationItem>
+                            <PaginationItem>
+                                <PaginationLink href="#" onClick={() => props.setPage(props.page + 2)}>
+                                    {props.page + 2}
+                                </PaginationLink>
+                            </PaginationItem>
                         }
 
                         { // Show ellipsis and last page button unless there is less than 3 pages, or we currently are on the last one
-                            props.pageCount > 3 && props.page+1 < props.pageCount &&
+                            props.pageCount > 3 && props.page + 1 < props.pageCount &&
                             <>
                                 <PaginationItem>
-                                    <PaginationEllipsis />
+                                    <PaginationEllipsis/>
                                 </PaginationItem>
 
                                 <PaginationItem>
@@ -105,7 +106,7 @@ export function Pagination(props: Props) {
                                                 () => props.setPage(currentPage => currentPage + 1)
                                             }
                                             className={clsx(props.page === props.pageCount &&
-                                                'pointer-events-none cursor-default text-muted')} />
+                                                'pointer-events-none cursor-default text-muted')}/>
                         </PaginationItem>
                     </PaginationContent>
                 </COSSPagination>

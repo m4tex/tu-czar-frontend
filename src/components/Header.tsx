@@ -1,9 +1,9 @@
-import {type JSX} from "react"
-import {Card, CardPanel} from "@/components/ui/card.tsx"
+import {type JSX} from "react";
+import {Card, CardPanel} from "@/components/ui/card.tsx";
 import {useQuery} from "../DuckDBHooks.ts";
 
 export function Header(): JSX.Element {
-    const {data, loading} = useQuery(`SELECT COUNT(*) AS count FROM tradeups.contracts`)
+    const {data, loading} = useQuery(`SELECT COUNT(*) AS count FROM tradeups.contracts`);
 
     return (
         <Card>
@@ -11,11 +11,11 @@ export function Header(): JSX.Element {
                 <h1 className="ml-2 text-4xl font-bold">M4xUp</h1>
                 {
                     loading ?
-                        <p className='mr-3'>Loading contracts...</p>
-                            :
-                        <p className='mr-3'>Loaded { data?.[0]?.count?.toLocaleString() } contracts</p>
+                        <p className="mr-3">Loading contracts...</p>
+                        :
+                        <p className="mr-3">Loaded {data?.[0]?.count?.toLocaleString()} contracts</p>
                 }
             </CardPanel>
         </Card>
-    )
+    );
 }

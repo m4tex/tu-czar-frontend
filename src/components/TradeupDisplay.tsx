@@ -1,7 +1,7 @@
 import {JSX} from "react";
 
 interface Props {
-    tradeup: TradeupEntry
+    tradeup: TradeupEntry;
 }
 
 export function TradeupDisplay(props: Props): JSX.Element {

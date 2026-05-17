@@ -13,26 +13,26 @@ import {DependencyList, Dispatch, SetStateAction, useEffect, useState} from "rea
  */
 
 export function useAsyncEffectChain(...effects: [() => Promise<void | (() => void)>, DependencyList][]) {
-    const triggers: [boolean, Dispatch<SetStateAction<boolean>>][] = []
+    const triggers: [boolean, Dispatch<SetStateAction<boolean>>][] = [];
 
     for (let i = 1; i < effects.length; i++) {
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        triggers[i] = useState(false)
+        triggers[i] = useState(false);
     }
 
     for (let i = 0; i < effects.length; i++) {
-        const [effectCallback, effectDependencies] = effects[i]
+        const [effectCallback, effectDependencies] = effects[i];
 
-        const trigger = triggers?.[i]?.[0]
-        const setNextTrigger = triggers?.[i + 1]?.[1]
+        const trigger = triggers?.[i]?.[0];
+        const setNextTrigger = triggers?.[i + 1]?.[1];
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         useEffect(() => {
             (async () => {
-                await effectCallback()
-                setNextTrigger?.(prev => !prev)
-            })()
-           // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [...effectDependencies, trigger, setNextTrigger])
+                await effectCallback();
+                setNextTrigger?.(prev => !prev);
+            })();
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [...effectDependencies, trigger, setNextTrigger]);
     }
 }

@@ -9,18 +9,18 @@ export function DuckDBProvider(props: PropsWithChildren) {
 
     useEffect(() => {
         (async () => {
-            const db = await initializeDuckDb({ debug: true })
-            const conn = await db.connect()
+            const db = await initializeDuckDb({debug: true});
+            const conn = await db.connect();
 
-            const res = await fetch('/tradeups.duckdb')
-            const buffer = await res.arrayBuffer()
-            await conn.bindings.registerFileBuffer("tradeups", new Uint8Array(buffer))
-            await conn.query(`ATTACH 'tradeups' AS tradeups;`)
+            const res = await fetch('/tradeups.duckdb');
+            const buffer = await res.arrayBuffer();
+            await conn.bindings.registerFileBuffer("tradeups", new Uint8Array(buffer));
+            await conn.query(`ATTACH 'tradeups' AS tradeups;`);
             await conn.query('CREATE OR REPLACE TABLE catalog AS SELECT * FROM tradeups.contracts WHERE FALSE');
             await conn.query('CREATE OR REPLACE TABLE filteredCatalog AS SELECT * FROM tradeups.contracts WHERE FALSE');
             setConn(conn);
             setReady(true);
-        })()
+        })();
     }, []);
 
     return (

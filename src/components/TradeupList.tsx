@@ -5,7 +5,7 @@ import {Skeleton} from "@/components/ui/skeleton.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
 
 interface Props {
-    tradeupData: Tradeup[] | null
+    tradeupData: Tradeup[] | null;
 }
 
 export function TradeupList(props: Props): JSX.Element {
@@ -15,19 +15,19 @@ export function TradeupList(props: Props): JSX.Element {
                 {
                     props.tradeupData ? (
                         props.tradeupData.length ?
-                        props.tradeupData.map(
-                            tradeup =>
-                                <TradeupCard tradeup={tradeup} key={tradeup.id} />
-                        )
-                        : <p>No tradeups found. Try changing filters.</p>
+                            props.tradeupData.map(
+                                tradeup =>
+                                    <TradeupCard tradeup={tradeup} key={tradeup.id}/>
+                            )
+                            : <p>No tradeups found. Try changing filters.</p>
                     ) : (
-                        Array.from({ length: 50 }).map((_,index) => (
-                                <Card className='w-56 h-50' key={index}>
+                        Array.from({length: 50}).map((_, index) => (
+                                <Card className="w-56 h-50" key={index}>
                                     <CardPanel>
-                                        <Skeleton className='my-2 h-2'/>
-                                        <Skeleton className='my-2 h-2'/>
-                                        <Separator />
-                                        <Skeleton className='my-2 h-2'/>
+                                        <Skeleton className="my-2 h-2"/>
+                                        <Skeleton className="my-2 h-2"/>
+                                        <Separator/>
+                                        <Skeleton className="my-2 h-2"/>
                                     </CardPanel>
                                 </Card>
                             )
@@ -36,5 +36,5 @@ export function TradeupList(props: Props): JSX.Element {
                 }
             </CardPanel>
         </Card>
-    )
+    );
 }
