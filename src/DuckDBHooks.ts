@@ -15,15 +15,15 @@ export function useDuckDb() {
     return useContext(DuckDbContext);
 }
 
-interface QueryState {
-    data: any[] | null,
+interface QueryState<DataType> {
+    data: DataType[] | null,
     error: unknown | null,
     loading: boolean,
 }
 
-export function useQuery(sql: string) {
+export function useQuery<DataType>(sql: string) {
     const {conn, ready} = useContext(DuckDbContext);
-    const [state, setState] = useState<QueryState>({
+    const [state, setState] = useState<QueryState<DataType>>({
         data: null,
         error: null,
         loading: true,
@@ -39,7 +39,7 @@ export function useQuery(sql: string) {
                 const result = await conn.query(sql);
                 if (!cancelled) {
                     setState({
-                        data: result.toArray().map(row => row.toJSON()),
+                        data: result.toArray().map(row => row.toJSON()) as DataType[],
                         error: null,
                         loading: false,
                     });

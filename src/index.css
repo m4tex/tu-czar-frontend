@@ -132,3 +132,7 @@
         @apply bg-background text-foreground;
     }
 }
+
+html, body {
+    scroll-behavior: smooth
+}

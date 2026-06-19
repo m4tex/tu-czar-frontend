@@ -16,8 +16,7 @@ interface Props {
 
 export function Pagination(props: Props) {
     return (
-        <Card
-            className="sticky bottom-12 w-fit left-1/2 transform -translate-x-1/2 shadow-[0px_0px_25px_rgba(0,0,0,0.5)]">
+        <Card className="sticky bottom-12 w-fit left-1/2 transform -translate-x-1/2 shadow-[0px_0px_25px_rgba(0,0,0,0.5)] bg-background/30 backdrop-blur-sm">
             <CardPanel className="p-1">
                 <COSSPagination>
                     <PaginationContent>

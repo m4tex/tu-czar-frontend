@@ -5,7 +5,7 @@ import {Header} from "@/components/Header.tsx";
 import {FilterPanel} from "@/components/FilterPanel.tsx";
 import {TradeupList} from "@/components/TradeupList.tsx";
 
-import {useAsyncEffectChain} from "../Utils.ts";
+import {useCheckpointPipeline} from "../Utils.ts";
 import {useDuckDb} from "@/DuckDBHooks.ts";
 import {Pagination} from "@/components/Pagination.tsx";
 
@@ -25,18 +25,23 @@ function App() {
 
     // useMemo for organized data
 
-    interface TradeupFilters {
-        weaponName: string;
+    const [filters, setFilters] = useState<TradeupFilters>({
+        weaponName: "",
+        sortCriteria: "profit_percentage",
+        sortDecreasingly: true,
+        profitableOnly: true,
+        collapseByWeapon: true,
+        weaponBlacklist: ["UMP-45 | Minotaur's Labyrinth"],
+    });
 
-
-    }
-
-    const [filters, setFilters] = useState<>([]);
-
-    const [sortDecreasingly, setSortDecreasingly] = useState<boolean>(true);
-    const [weaponNameFilter, setWeaponNameFilter] = useState<string>("");
-    const [filter, setFilter] = useState<string>('profit_percentage');
-    const [profitableOnly, setProfitableOnly] = useState<boolean>(true);
+    const {
+        weaponName: weaponNameFilter,
+        sortCriteria,
+        sortDecreasingly,
+        profitableOnly,
+        collapseByWeapon,
+        weaponBlacklist
+    } = filters;
 
     const [tradeupData, setTradeupData] = useState<Tradeup[] | null>(null);
 
@@ -44,61 +49,94 @@ function App() {
 
     const {conn, ready} = useDuckDb();
 
-    useAsyncEffectChain(
+    useCheckpointPipeline(ready && !!conn,
         [
             async () => { // First step is the main filter
-                if (!ready || !conn) return;
-
                 setTradeupData(null);
 
-                await conn.query(`DELETE
-                                  FROM catalog`);
+                await conn!.query(`DELETE FROM catalog`);
 
-                // Discard tradeups with the same skins that have worse profit and only keep the best one to minimize clutter
-                await conn.query(`
+                const dedupeQuery = `
                     INSERT INTO catalog
                     SELECT *
                     FROM tradeups.contracts QUALIFY ROW_NUMBER() OVER
-                            (PARTITION BY skin1,skin2 ORDER BY profit DESC NULLS LAST) = 1`);
-            }, [filter, ready]
+                            (PARTITION BY skin1,skin2 ORDER BY profit DESC NULLS LAST) = 1`;
+
+                const selectiveCollapseQuery = `WITH dedup AS (
+                    SELECT *
+                    FROM (
+                             SELECT *,
+                                    ROW_NUMBER() OVER (PARTITION BY skin1, skin2 ORDER BY profit DESC NULLS LAST) AS rn_pair
+                             FROM tradeups.contracts
+                         )
+                    WHERE rn_pair = 1
+                ),
+                filtered AS (
+                    SELECT *
+                    FROM dedup d1
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM dedup d2
+                        WHERE d1.skin2 = d2.skin1
+                    )
+                ),
+                top3 AS (
+                    SELECT *
+                    FROM (
+                             SELECT *,
+                                    ROW_NUMBER() OVER (PARTITION BY skin1 ORDER BY profit DESC NULLS LAST) AS rn_skin1
+                              FROM filtered
+                         )
+                    WHERE rn_skin1 <= 3
+                )
+                INSERT INTO catalog (id, profit, cost, type, skin1, skin2, skin1count, skin2count, skin1minAvg, skin2minAvg, skin1maxAvg, skin2maxAvg)
+                SELECT id, profit, cost, type, skin1, skin2, skin1count, skin2count, skin1minAvg, skin2minAvg, skin1maxAvg, skin2maxAvg
+                    FROM top3`;
+
+                // Discard tradeups with the same skins that have worse profit and only keep the best one to minimize clutter
+                await conn!.query(collapseByWeapon ? selectiveCollapseQuery : dedupeQuery);
+            }, [sortCriteria, collapseByWeapon, ready]
         ], [
             async () => { // Now filter by skin name (if filtering by skin name)
-                if (!ready || !conn) return;
+                await conn!.query(`DELETE
+                                   FROM filteredCatalog`);
 
+                const expandedBlacklist = "[" + weaponBlacklist.map(w => "$$" + w + "$$").join(', ') + "]";
 
-                await conn.query(`DELETE
-                                  FROM filteredCatalog`);
-                const prepared = await conn.prepare(`
+                const prepared = await conn!.prepare(`
                     INSERT INTO filteredCatalog
                     SELECT *
                     FROM catalog
-                    WHERE skin1 ILIKE '%' || $1 || '%'
-                       OR skin2 ILIKE '%' || $1 || '%'
+                    WHERE (skin1 ILIKE '%' || $1 || '%'
+                       OR skin2 ILIKE '%' || $1 || '%')
+                        AND skin1 NOT IN ${expandedBlacklist} 
+                        AND skin2 NOT IN ${expandedBlacklist}
                 `);
                 await prepared.query(weaponNameFilter);
             },
-            [weaponNameFilter]
+            [weaponNameFilter, weaponBlacklist]
         ], [
             async () => { // Finally sort order before displaying
-                if (!ready || !conn) return;
-
                 // Get page count
-                const countTable = await conn.query(`SELECT COUNT(*) as count
-                                                     FROM filteredCatalog`);
+                const countTable = await conn!.query(`SELECT COUNT(*) as count
+                                                      FROM filteredCatalog`);
                 const filteredCount = countTable.get(0)!.count;
 
                 setPageCount(Math.ceil(Number(filteredCount) / tradeupsPerPage));
 
-                const tradeups = await conn.query(`
+                const whereProfitable = profitableOnly ? 'WHERE profit > 1' : '';
+
+                const tradeups = await conn!.query(`
                     SELECT *
-                    FROM filteredCatalog
+                    FROM filteredCatalog ${whereProfitable}
                     ORDER BY profit ${sortOrder} NULLS LAST 
                             LIMIT ${tradeupsPerPage}
                     OFFSET ${(page - 1) * tradeupsPerPage}
                 `);
 
                 setTradeupData(tradeups.toArray().map(row => row.toJSON()));
-            }, [setTradeupData, page, sortOrder]
+
+            }, [setTradeupData, page, sortOrder, profitableOnly]
         ]
     );
 
@@ -113,10 +151,7 @@ function App() {
         <>
             <div className="flex flex-col gap-4">
                 <Header/>
-                <FilterPanel weaponNameFilter={weaponNameFilter} setWeaponNameFilter={setWeaponNameFilter}
-                             sortDecreasingly={sortDecreasingly} setSortDecreasingly={setSortDecreasingly}
-                             filter={filter} setFilter={setFilter} profitableOnly={profitableOnly}
-                             setProfitableOnly={setProfitableOnly}/>
+                <FilterPanel filters={filters} setFilters={setFilters}/>
                 <TradeupList tradeupData={tradeupData}/>
                 <Pagination page={page} setPage={setPage} pageCount={pageCount}/>
             </div>
