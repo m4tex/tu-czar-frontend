@@ -23,14 +23,13 @@ function App() {
     const [page, setPage] = useState(1);
     const [pageCount, setPageCount] = useState(0);
 
-    // useMemo for organized data
-
     const [filters, setFilters] = useState<TradeupFilters>({
         weaponName: "",
         sortCriteria: "profit_percentage",
         sortDecreasingly: true,
         profitableOnly: true,
         collapseByWeapon: true,
+        floatTolerance: 0.05,
         weaponBlacklist: ["UMP-45 | Minotaur's Labyrinth"],
     });
 
@@ -40,7 +39,8 @@ function App() {
         sortDecreasingly,
         profitableOnly,
         collapseByWeapon,
-        weaponBlacklist
+        floatTolerance,
+        weaponBlacklist,
     } = filters;
 
     const [tradeupData, setTradeupData] = useState<Tradeup[] | null>(null);
@@ -54,6 +54,8 @@ function App() {
             async () => { // First step is the main filter
                 setTradeupData(null);
 
+                const expandedBlacklist = "[" + weaponBlacklist.map(w => "$$" + w + "$$").join(', ') + "]";
+
                 await conn!.query(`DELETE FROM catalog`);
 
                 const dedupeQuery = `
@@ -62,61 +64,56 @@ function App() {
                     FROM tradeups.contracts QUALIFY ROW_NUMBER() OVER
                             (PARTITION BY skin1,skin2 ORDER BY profit DESC NULLS LAST) = 1`;
 
-                const selectiveCollapseQuery = `WITH dedup AS (
-                    SELECT *
-                    FROM (
-                             SELECT *,
-                                    ROW_NUMBER() OVER (PARTITION BY skin1, skin2 ORDER BY profit DESC NULLS LAST) AS rn_pair
-                             FROM tradeups.contracts
-                         )
-                    WHERE rn_pair = 1
+                const selectiveCollapseQuery = `
+                WITH floatTolerated AS (
+                    SELECT * FROM tradeups.contracts
+                    WHERE floatTolerance >= ${floatTolerance}),
+                dedup AS (
+                    SELECT * FROM (
+                        SELECT *,
+                            ROW_NUMBER() OVER (PARTITION BY skin1, skin2 ORDER BY profit DESC NULLS LAST) AS rn_pair
+                        FROM floatTolerated
+                    ) WHERE rn_pair = 1
                 ),
-                filtered AS (
-                    SELECT *
-                    FROM dedup d1
-                    WHERE NOT EXISTS (
-                        SELECT 1
-                        FROM dedup d2
-                        WHERE d1.skin2 = d2.skin1
-                    )
+                filtered as (
+                    SELECT * FROM dedup WHERE
+                        skin1 NOT IN ${expandedBlacklist} AND 
+                        skin2 NOT IN ${expandedBlacklist}
                 ),
                 top3 AS (
-                    SELECT *
-                    FROM (
-                             SELECT *,
-                                    ROW_NUMBER() OVER (PARTITION BY skin1 ORDER BY profit DESC NULLS LAST) AS rn_skin1
-                              FROM filtered
-                         )
-                    WHERE rn_skin1 <= 3
+                    SELECT * FROM (
+                        SELECT *,
+                           ROW_NUMBER() OVER (PARTITION BY skin1 ORDER BY profit DESC NULLS LAST) AS rn_skin1
+                        FROM filtered
+                    ) WHERE rn_skin1 <= 3
                 )
-                INSERT INTO catalog (id, profit, cost, type, skin1, skin2, skin1count, skin2count, skin1minAvg, skin2minAvg, skin1maxAvg, skin2maxAvg)
-                SELECT id, profit, cost, type, skin1, skin2, skin1count, skin2count, skin1minAvg, skin2minAvg, skin1maxAvg, skin2maxAvg
+                INSERT INTO catalog 
+                      (id, profit, cost, type, floatTolerance, skin1, skin2, skin1count, skin2count, skin1minAvg, skin2minAvg, skin1maxAvg, skin2maxAvg, skin1optimal, skin2optimal)
+                SELECT id, profit, cost, type, floatTolerance, skin1, skin2, skin1count, skin2count, skin1minAvg, skin2minAvg, skin1maxAvg, skin2maxAvg, skin1optimal, skin2optimal
                     FROM top3`;
 
                 // Discard tradeups with the same skins that have worse profit and only keep the best one to minimize clutter
                 await conn!.query(collapseByWeapon ? selectiveCollapseQuery : dedupeQuery);
-            }, [sortCriteria, collapseByWeapon, ready]
+            }, [sortCriteria, collapseByWeapon, ready, weaponBlacklist, floatTolerance]
         ], [
             async () => { // Now filter by skin name (if filtering by skin name)
-                await conn!.query(`DELETE
-                                   FROM filteredCatalog`);
+                setPage(1);
 
-                const expandedBlacklist = "[" + weaponBlacklist.map(w => "$$" + w + "$$").join(', ') + "]";
-
+                await conn!.query(`DELETE FROM filteredCatalog`);
+                
                 const prepared = await conn!.prepare(`
                     INSERT INTO filteredCatalog
                     SELECT *
                     FROM catalog
                     WHERE (skin1 ILIKE '%' || $1 || '%'
                        OR skin2 ILIKE '%' || $1 || '%')
-                        AND skin1 NOT IN ${expandedBlacklist} 
-                        AND skin2 NOT IN ${expandedBlacklist}
                 `);
+                
                 await prepared.query(weaponNameFilter);
             },
-            [weaponNameFilter, weaponBlacklist]
+            [weaponNameFilter]
         ], [
-            async () => { // Finally sort order before displaying
+            async () => { // Finally sort order and pagination before displaying
                 // Get page count
                 const countTable = await conn!.query(`SELECT COUNT(*) as count
                                                       FROM filteredCatalog`);

@@ -1,6 +1,6 @@
 import {Card, CardPanel} from "@/components/ui/card.tsx";
 import {type JSX} from "react";
-import {TradeupCard} from "@/TradeupCard.tsx";
+import {TradeupCard} from "@/components/TradeupCard.tsx";
 import {Skeleton} from "@/components/ui/skeleton.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
 

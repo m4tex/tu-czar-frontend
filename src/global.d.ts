@@ -20,6 +20,7 @@ interface Tradeup {
     profit: number;
     cost: number;
     type: number;
+    floatTolerance: number;
 
     skin1: string;
     skin2?: string;
@@ -29,6 +30,8 @@ interface Tradeup {
     skin2minAvg?: number;
     skin1maxAvg: number;
     skin2maxAvg?: number;
+    skin1optimal: number;
+    skin2optimal?: number;
 }
 
 interface TradeupFilters {
@@ -37,5 +40,11 @@ interface TradeupFilters {
     sortDecreasingly: boolean;
     profitableOnly: boolean;
     collapseByWeapon: boolean;
+    floatTolerance: number;
     weaponBlacklist: string[];
+}
+
+interface FloatIndicator {
+    position: number;
+    color: string;
 }

@@ -43,12 +43,14 @@ export function FilterPanel(props: Props): JSX.Element {
     }, []);
 
     const resetFilters = () => {
-        props.setFilters({
+        props.setFilters(prev => ({
+            ...prev,
             weaponName: "",
             sortCriteria: "profit_percentage",
             sortDecreasingly: true,
             profitableOnly: true,
-        });
+            collapseByWeapon: true,
+        }));
 
         if (weaponNameFilterRef.current)
             weaponNameFilterRef.current.value = "";
@@ -138,7 +140,7 @@ export function FilterPanel(props: Props): JSX.Element {
                         </div>
                         <div className={`grid transition-all duration-300 ease-in-out ${expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                             <div className="overflow-hidden">
-                                Testing
+
                             </div>
                         </div>
                     </CardPanel>
